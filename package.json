@@ -1,0 +1,9 @@
+{
+  "name": "subtitle-release-gate",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "scripts": { "test": "node --test", "serve": "node scripts/serve.mjs" },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

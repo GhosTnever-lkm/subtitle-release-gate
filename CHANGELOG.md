@@ -1,0 +1,8 @@
+# Changelog
+
+## 1.0.0 — 2026-10-10
+
+- First public release of the offline SRT/WebVTT preflight checker.
+- Detects malformed timestamps, non-positive durations, overlaps, reading-speed outliers, line-length and line-count issues, unusual display duration, duplicate text, and replacement characters.
+- Compares two subtitle tracks by cue count and timing drift; exports a Markdown QA report.
+- Includes five Node.js tests and a GitHub Pages deployment workflow.
