@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 — 2026-10-13
+
+- Detects overlaps with an earlier long cue even when a shorter cue appears between them.
+
 ## 1.0.0 — 2026-10-10
 
 - First public release of the offline SRT/WebVTT preflight checker.
