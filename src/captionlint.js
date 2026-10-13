@@ -54,6 +54,13 @@ export function parseSubtitle(source, name = "subtitles.srt") {
 
 export function analyzeSubtitles(parsed, rules = DEFAULT_RULES) {
   const issues = [...parsed.issues];
+  const overlapByCue = new Map();
+  const timeOrdered = parsed.cues.filter(cue => cue.end > cue.start).slice().sort((a, b) => a.start - b.start || a.cue - b.cue);
+  let widestOverlap = null;
+  for (const cue of timeOrdered) {
+    if (widestOverlap && cue.start < widestOverlap.end) overlapByCue.set(cue.cue, { withCue: widestOverlap.cue, duration: widestOverlap.end - cue.start });
+    if (!widestOverlap || cue.end > widestOverlap.end) widestOverlap = cue;
+  }
   let previous = null;
   for (const cue of parsed.cues) {
     const duration = cue.end - cue.start;
@@ -72,7 +79,8 @@ export function analyzeSubtitles(parsed, rules = DEFAULT_RULES) {
       if (n > rules.maxLineChars) issues.push(ISSUE("warning", "line-too-long", `Строка ${idx + 1}: ${n} символов при лимите ${rules.maxLineChars}.`, cue.cue, cue.line + 1 + idx));
     });
     if (text.includes("\uFFFD")) issues.push(ISSUE("warning", "replacement-character", "Найден символ замены �; проверь кодировку исходного файла.", cue.cue, cue.line));
-    if (previous && cue.start < previous.end) issues.push(ISSUE("warning", "overlap", `Пересекается с cue ${previous.cue} на ${previous.end - cue.start} мс.`, cue.cue, cue.line));
+    const overlap = overlapByCue.get(cue.cue);
+    if (overlap) issues.push(ISSUE("warning", "overlap", `Пересекается с cue ${overlap.withCue} на ${overlap.duration} мс.`, cue.cue, cue.line));
     if (previous && text && text.toLocaleLowerCase() === previous.text.trim().toLocaleLowerCase()) issues.push(ISSUE("notice", "duplicate-text", `Текст повторяет cue ${previous.cue}.`, cue.cue, cue.line));
     previous = cue;
   }

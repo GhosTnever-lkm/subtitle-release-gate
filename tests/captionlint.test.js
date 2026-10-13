@@ -15,9 +15,31 @@ test("parses WebVTT minute-only timestamps", () => {
   assert.equal(result.cues[0].start, 1000); assert.equal(result.cues[0].end, 2000); assert.deepEqual(result.issues, []);
 });
 test("reports timestamp, overlap, reading speed and line issues", () => {
-  const parsed = parseSubtitle("1\n00:00:00,000 --> 00:00:02,000\n" + "A".repeat(50) + "\n\n2\n00:00:01,500 --> 00:00:01,000\nBad\n\n3\n00:61:00,000 --> 00:61:01,000\nWrong\n", "x.srt");
+  const parsed = parseSubtitle("1\n00:00:00,000 --> 00:00:02,000\n" + "A".repeat(50) + "\n\n2\n00:00:01,500 --> 00:00:02,500\nOverlap\n\n3\n00:00:03,000 --> 00:00:02,000\nBad\n\n4\n00:61:00,000 --> 00:61:01,000\nWrong\n", "x.srt");
   const issues = analyzeSubtitles(parsed, { maxCps: 10, maxLineChars: 42, maxLines: 2, minDurationMs: 700, maxDurationMs: 7000 });
   for (const code of ["line-too-long", "reading-speed", "overlap", "nonpositive-duration", "invalid-timestamp"]) assert.ok(issues.some(x => x.code === code), code);
+});
+test("detects a long cue overlapping later cues after a shorter nested cue", () => {
+  const parsed = parseSubtitle([
+    "1", "00:00:00,000 --> 00:00:10,000", "Long cue", "",
+    "2", "00:00:01,000 --> 00:00:02,000", "Nested cue", "",
+    "3", "00:00:03,000 --> 00:00:04,000", "Later cue", ""
+  ].join("\n"), "nested-overlap.srt");
+  const issues = analyzeSubtitles(parsed);
+  const overlaps = issues.filter(issue => issue.code === "overlap");
+  assert.equal(overlaps.length, 2);
+  assert.match(overlaps[1].message, /cue 1/);
+});
+test("detects overlaps by time even when cue blocks are out of order", () => {
+  const parsed = parseSubtitle([
+    "1", "00:00:10,000 --> 00:00:30,000", "Later long cue", "",
+    "2", "00:00:00,000 --> 00:00:15,000", "Earlier cue", "",
+    "3", "00:00:05,000 --> 00:00:09,000", "Inside earlier cue", ""
+  ].join("\n"), "out-of-order.srt");
+  const issues = analyzeSubtitles(parsed).filter(issue => issue.code === "overlap");
+  assert.equal(issues.length, 2);
+  assert.equal(issues[1].cue, 3);
+  assert.match(issues[1].message, /cue 2/);
 });
 test("compares cue count and time drift across two tracks", () => {
   const a = parseSubtitle("1\n00:00:01,000 --> 00:00:02,000\nHello\n", "a.srt"), b = parseSubtitle("1\n00:00:02,000 --> 00:00:03,000\nHola\n\n2\n00:00:04,000 --> 00:00:05,000\nAdios\n", "b.srt");
