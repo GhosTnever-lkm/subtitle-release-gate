@@ -1,5 +1,7 @@
 # CaptionLint — Subtitle Release QA
 
+![CI](https://github.com/GhosTnever-lkm/subtitle-release-gate/actions/workflows/ci.yml/badge.svg)
+
 CaptionLint checks SRT and WebVTT subtitle files before release. It catches timing and readability problems and compares a translated track with its source. The browser app processes file contents locally and exports a Markdown report.
 
 **Live app:** https://ghostnever-lkm.github.io/subtitle-release-gate/ · **Source:** https://github.com/GhosTnever-lkm/subtitle-release-gate
