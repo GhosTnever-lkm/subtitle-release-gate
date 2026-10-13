@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — 2026-10-13
+
+- Adds versioned URLs for browser modules so hosted pages fetch the current analysis logic after an update.
+
 ## 1.0.1 — 2026-10-13
 
 - Detects overlaps with an earlier long cue even when a shorter cue appears between them.
