@@ -99,9 +99,16 @@ export function compareTracks(a, b) {
   return issues;
 }
 
+function escapeMarkdownText(value) {
+  return String(value ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n/g, "\\n")
+    .replace(/([\\`*_{}\[\]()#+\-.!|>])/g, "\\$1");
+}
+
 export function makeMarkdownReport(name, cues, issues, comparison = []) {
   const tally = ["error", "warning", "notice"].map(level => `${level}: ${issues.filter(x => x.severity === level).length}`).join(" · ");
-  const rows = issues.map(x => `| ${x.severity} | ${x.code} | ${x.cue ?? "—"} | ${x.line ?? "—"} | ${x.message.replaceAll("|", "\\|")} |`);
-  const compareRows = comparison.map(x => `| ${x.severity} | ${x.cue ?? "—"} | ${x.message.replaceAll("|", "\\|")} |`);
-  return `# Subtitle QA report\n\n- File: ${name}\n- Cues parsed: ${cues.length}\n- Findings: ${tally}\n\n| Severity | Rule | Cue | Source line | Finding |\n|---|---|---:|---:|---|\n${rows.join("\n") || "| — | — | — | — | No findings |"}${comparison.length ? `\n\n## Track comparison\n\n| Severity | Cue | Finding |\n|---|---:|---|\n${compareRows.join("\n")}` : ""}\n`;
+  const rows = issues.map(x => `| ${x.severity} | ${x.code} | ${x.cue ?? "—"} | ${x.line ?? "—"} | ${escapeMarkdownText(x.message)} |`);
+  const compareRows = comparison.map(x => `| ${x.severity} | ${x.cue ?? "—"} | ${escapeMarkdownText(x.message)} |`);
+  return `# Subtitle QA report\n\n- File: ${escapeMarkdownText(name)}\n- Cues parsed: ${cues.length}\n- Findings: ${tally}\n\n| Severity | Rule | Cue | Source line | Finding |\n|---|---|---:|---:|---|\n${rows.join("\n") || "| — | — | — | — | No findings |"}${comparison.length ? `\n\n## Track comparison\n\n| Severity | Cue | Finding |\n|---|---:|---|\n${compareRows.join("\n")}` : ""}\n`;
 }

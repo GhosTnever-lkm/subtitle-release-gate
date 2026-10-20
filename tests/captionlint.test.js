@@ -48,3 +48,12 @@ test("compares cue count and time drift across two tracks", () => {
 test("Markdown report escapes table delimiters", () => {
   const report = makeMarkdownReport("a.srt", [], [{ severity: "warning", code: "line", cue: 1, line: 2, message: "text | text" }]); assert.match(report, /text \\\| text/);
 });
+
+test("Markdown report escapes untrusted filenames and malformed timestamp text", () => {
+  const maliciousName = "clip.srt\n\n## injected section\n[click](https://evil.example)";
+  const parsed = parseSubtitle("1\n[click](https://evil.example) --> 00:00:00,000\nText\n", maliciousName);
+  const report = makeMarkdownReport(maliciousName, parsed.cues, parsed.issues);
+  assert.doesNotMatch(report, /\n## injected section/);
+  assert.doesNotMatch(report, /\[click\]\(https:\/\/evil\.example\)/);
+  assert.match(report, /injected section/);
+});

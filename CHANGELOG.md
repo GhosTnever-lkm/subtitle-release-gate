@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3 — 2026-10-20
+
+- Escapes untrusted subtitle filenames and malformed timestamp text in exported Markdown reports.
+
 ## 1.0.2 — 2026-10-13
 
 - Adds versioned URLs for browser modules so hosted pages fetch the current analysis logic after an update.
