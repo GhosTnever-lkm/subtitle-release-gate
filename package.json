@@ -1,6 +1,6 @@
 {
   "name": "subtitle-release-gate",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": false,
   "type": "module",
   "scripts": { "test": "node --test", "serve": "node scripts/serve.mjs" },
