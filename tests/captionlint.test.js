@@ -14,6 +14,18 @@ test("parses WebVTT minute-only timestamps", () => {
   const result = parseSubtitle("WEBVTT\n\n00:01.000 --> 00:02.000\nHello\n", "short.vtt");
   assert.equal(result.cues[0].start, 1000); assert.equal(result.cues[0].end, 2000); assert.deepEqual(result.issues, []);
 });
+test("skips valid WebVTT metadata headers before HLS subtitle cues", () => {
+  const result = parseSubtitle("WEBVTT\nX-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:900000\n\n00:00:01.000 --> 00:00:02.000\nHello\n", "hls.vtt");
+  assert.equal(result.cues.length, 1);
+  assert.equal(result.cues[0].start, 1000);
+  assert.deepEqual(result.issues, []);
+});
+test("preserves WEBVTT as an ordinary cue identifier after the header", () => {
+  const result = parseSubtitle("WEBVTT\n\nWEBVTT\n00:00:01.000 --> 00:00:02.000\nHello\n", "identified.vtt");
+  assert.equal(result.cues.length, 1);
+  assert.equal(result.cues[0].id, "WEBVTT");
+  assert.deepEqual(result.issues, []);
+});
 test("reports timestamp, overlap, reading speed and line issues", () => {
   const parsed = parseSubtitle("1\n00:00:00,000 --> 00:00:02,000\n" + "A".repeat(50) + "\n\n2\n00:00:01,500 --> 00:00:02,500\nOverlap\n\n3\n00:00:03,000 --> 00:00:02,000\nBad\n\n4\n00:61:00,000 --> 00:61:01,000\nWrong\n", "x.srt");
   const issues = analyzeSubtitles(parsed, { maxCps: 10, maxLineChars: 42, maxLines: 2, minDurationMs: 700, maxDurationMs: 7000 });

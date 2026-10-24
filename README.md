@@ -9,6 +9,7 @@ CaptionLint checks SRT and WebVTT subtitle files before release. It catches timi
 ## What it checks
 
 - Malformed SRT/WebVTT timestamps and missing WebVTT headers.
+- WebVTT metadata headers, including HLS `X-TIMESTAMP-MAP`, are skipped before cue parsing.
 - Cue ends at or before their starts, and overlapping cues (including nested long cues and out-of-order blocks).
 - Character-per-second reading speed, configurable from 1 to 60 (default 20).
 - Maximum line length, configurable from 10 to 100 characters (default 42), and more than two lines per cue.

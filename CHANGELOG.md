@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.4 — 2026-10-24
+
+- Skip valid WebVTT metadata headers, including HLS `X-TIMESTAMP-MAP`, instead of reporting them as malformed cues.
+- Preserve `WEBVTT` as a valid cue identifier after the actual file header.
+
 ## 1.0.3 — 2026-10-20
 
 - Escapes untrusted subtitle filenames and malformed timestamp text in exported Markdown reports.

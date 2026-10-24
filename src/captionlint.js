@@ -21,10 +21,19 @@ export function parseSubtitle(source, name = "subtitles.srt") {
     issues.push(ISSUE("error", "vtt-header", "WebVTT-файл должен начинаться с WEBVTT.", null, 1));
   }
   const lines = text.split("\n");
-  let i = 0, cueNumber = 0;
+  let i = 0, cueNumber = 0, vttHeaderPending = format === "vtt";
   while (i < lines.length) {
     const raw = lines[i], trimmed = raw.trim();
-    if (!trimmed || (format === "vtt" && /^(WEBVTT|NOTE(?:\s|$)|STYLE$|REGION$)/.test(trimmed))) {
+    if (vttHeaderPending) {
+      if (!trimmed) { i++; continue; }
+      vttHeaderPending = false;
+      if (/^WEBVTT(?:\s|$)/.test(trimmed)) {
+        i++;
+        while (i < lines.length && lines[i].trim() && /^[^:\r\n]+:[^\r\n]*$/.test(lines[i])) i++;
+        continue;
+      }
+    }
+    if (!trimmed || (format === "vtt" && /^(NOTE(?:\s|$)|STYLE$|REGION$)/.test(trimmed))) {
       const block = format === "vtt" && /^(NOTE(?:\s|$)|STYLE$|REGION$)/.test(trimmed);
       i++;
       if (block) while (i < lines.length && lines[i].trim()) i++;
