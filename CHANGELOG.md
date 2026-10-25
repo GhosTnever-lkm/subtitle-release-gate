@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6 ? 2026-10-25
+
+- Use English consistently for parser, readability, and track-comparison findings.
+- Add a regression test that guards diagnostic language and key message output.
+- Refresh app cache keys and displayed version.
+
 ## 1.0.5 — 2026-10-25
 
 - Detect WebVTT from its file header only, so an SRT cue containing the word `WEBVTT` remains valid SRT.
