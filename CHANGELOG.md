@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.5 — 2026-10-25
+
+- Detect WebVTT from its file header only, so an SRT cue containing the word `WEBVTT` remains valid SRT.
+
 ## 1.0.4 — 2026-10-24
 
 - Skip valid WebVTT metadata headers, including HLS `X-TIMESTAMP-MAP`, instead of reporting them as malformed cues.

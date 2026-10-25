@@ -15,7 +15,7 @@ const timestamp = (raw, format) => {
 
 export function parseSubtitle(source, name = "subtitles.srt") {
   const text = String(source).replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
-  const format = /\.vtt$/i.test(name) || /^WEBVTT(?:\s|$)/m.test(text) ? "vtt" : "srt";
+  const format = /\.vtt$/i.test(name) || /^WEBVTT(?:\s|$)/.test(text.trimStart()) ? "vtt" : "srt";
   const cues = [], issues = [];
   if (format === "vtt" && !/^WEBVTT(?:\s|$)/.test(text.trimStart())) {
     issues.push(ISSUE("error", "vtt-header", "WebVTT-файл должен начинаться с WEBVTT.", null, 1));
