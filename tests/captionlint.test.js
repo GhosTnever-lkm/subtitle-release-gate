@@ -26,6 +26,13 @@ test("preserves WEBVTT as an ordinary cue identifier after the header", () => {
   assert.equal(result.cues[0].id, "WEBVTT");
   assert.deepEqual(result.issues, []);
 });
+test("does not mistake WEBVTT subtitle text for a file header in SRT", () => {
+  const result = parseSubtitle("1\n00:00:01,000 --> 00:00:02,000\nWEBVTT\n", "movie.srt");
+  assert.equal(result.format, "srt");
+  assert.equal(result.cues.length, 1);
+  assert.equal(result.cues[0].text, "WEBVTT");
+  assert.deepEqual(result.issues, []);
+});
 test("reports timestamp, overlap, reading speed and line issues", () => {
   const parsed = parseSubtitle("1\n00:00:00,000 --> 00:00:02,000\n" + "A".repeat(50) + "\n\n2\n00:00:01,500 --> 00:00:02,500\nOverlap\n\n3\n00:00:03,000 --> 00:00:02,000\nBad\n\n4\n00:61:00,000 --> 00:61:01,000\nWrong\n", "x.srt");
   const issues = analyzeSubtitles(parsed, { maxCps: 10, maxLineChars: 42, maxLines: 2, minDurationMs: 700, maxDurationMs: 7000 });
