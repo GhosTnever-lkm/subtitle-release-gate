@@ -18,7 +18,7 @@ export function parseSubtitle(source, name = "subtitles.srt") {
   const format = /\.vtt$/i.test(name) || /^WEBVTT(?:\s|$)/.test(text.trimStart()) ? "vtt" : "srt";
   const cues = [], issues = [];
   if (format === "vtt" && !/^WEBVTT(?:\s|$)/.test(text.trimStart())) {
-    issues.push(ISSUE("error", "vtt-header", "WebVTT-файл должен начинаться с WEBVTT.", null, 1));
+    issues.push(ISSUE("error", "vtt-header", "A WebVTT file must start with WEBVTT.", null, 1));
   }
   const lines = text.split("\n");
   let i = 0, cueNumber = 0, vttHeaderPending = format === "vtt";
@@ -44,19 +44,19 @@ export function parseSubtitle(source, name = "subtitles.srt") {
     if (!timing.includes("-->")) {
       if (format === "srt" && /^\d+$/.test(trimmed)) { id = Number(trimmed); i++; timing = (lines[i] || "").trim(); }
       else if (format === "vtt") { id = trimmed; i++; timing = (lines[i] || "").trim(); }
-      else { issues.push(ISSUE("error", "unexpected-line", "Ожидалась строка тайминга SRT.", null, startLine)); i++; continue; }
+      else { issues.push(ISSUE("error", "unexpected-line", "Expected an SRT timing line.", null, startLine)); i++; continue; }
     }
     const match = timing.match(/^(.+?)\s+-->\s+(.+?)(?:\s+.*)?$/);
-    if (!match) { issues.push(ISSUE("error", "invalid-timing", "Не удалось прочитать строку тайминга.", null, i + 1)); i++; continue; }
+    if (!match) { issues.push(ISSUE("error", "invalid-timing", "Could not parse this timing line.", null, i + 1)); i++; continue; }
     const start = timestamp(match[1], format), end = timestamp(match[2], format);
     i++;
     const body = [];
     while (i < lines.length && lines[i].trim() !== "") body.push(lines[i++]);
     cueNumber++;
-    if (start === null || end === null) { issues.push(ISSUE("error", "invalid-timestamp", `Неверный формат таймкода: ${match[1]} --> ${match[2]}.`, cueNumber, startLine)); continue; }
+    if (start === null || end === null) { issues.push(ISSUE("error", "invalid-timestamp", `Invalid timestamp format: ${match[1]} --> ${match[2]}.`, cueNumber, startLine)); continue; }
     cues.push({ id: id ?? cueNumber, start, end, text: body.join("\n"), line: startLine, cue: cueNumber });
-    if (!body.some(line => line.trim())) issues.push(ISSUE("error", "empty-cue", "Пустой субтитр.", cueNumber, startLine));
-    if (end <= start) issues.push(ISSUE("error", "nonpositive-duration", "Конец должен быть позже начала.", cueNumber, startLine));
+    if (!body.some(line => line.trim())) issues.push(ISSUE("error", "empty-cue", "This subtitle cue is empty.", cueNumber, startLine));
+    if (end <= start) issues.push(ISSUE("error", "nonpositive-duration", "Cue end time must be after its start time.", cueNumber, startLine));
   }
   return { format, cues, issues, lineCount: lines.length };
 }
@@ -76,21 +76,21 @@ export function analyzeSubtitles(parsed, rules = DEFAULT_RULES) {
     const text = cue.text.trim();
     const visibleChars = [...text.replace(/<[^>]*>/g, "").replace(/\{[^}]*\}/g, "")].filter(c => !/\s/.test(c)).length;
     if (duration > 0 && visibleChars / (duration / 1000) > rules.maxCps)
-      issues.push(ISSUE("warning", "reading-speed", `${(visibleChars / (duration / 1000)).toFixed(1)} знака/с — выше лимита ${rules.maxCps}.`, cue.cue, cue.line));
+      issues.push(ISSUE("warning", "reading-speed", `${(visibleChars / (duration / 1000)).toFixed(1)} chars/s — above the limit of ${rules.maxCps}.`, cue.cue, cue.line));
     if (duration > 0 && duration < rules.minDurationMs)
-      issues.push(ISSUE("warning", "short-duration", `Показ ${duration} мс — короче минимума ${rules.minDurationMs} мс.`, cue.cue, cue.line));
+      issues.push(ISSUE("warning", "short-duration", `Display time ${duration} ms — below the minimum of ${rules.minDurationMs} ms.`, cue.cue, cue.line));
     if (duration > rules.maxDurationMs)
-      issues.push(ISSUE("notice", "long-duration", `Показ ${(duration / 1000).toFixed(1)} с — дольше ориентира ${rules.maxDurationMs / 1000} с.`, cue.cue, cue.line));
+      issues.push(ISSUE("notice", "long-duration", `Display time ${(duration / 1000).toFixed(1)} s — above the ${rules.maxDurationMs / 1000} s guide.`, cue.cue, cue.line));
     const rows = cue.text.split("\n");
-    if (rows.length > rules.maxLines) issues.push(ISSUE("warning", "too-many-lines", `${rows.length} строк при лимите ${rules.maxLines}.`, cue.cue, cue.line));
+    if (rows.length > rules.maxLines) issues.push(ISSUE("warning", "too-many-lines", `${rows.length} lines; limit is ${rules.maxLines}.`, cue.cue, cue.line));
     rows.forEach((row, idx) => {
       const n = [...row].length;
-      if (n > rules.maxLineChars) issues.push(ISSUE("warning", "line-too-long", `Строка ${idx + 1}: ${n} символов при лимите ${rules.maxLineChars}.`, cue.cue, cue.line + 1 + idx));
+      if (n > rules.maxLineChars) issues.push(ISSUE("warning", "line-too-long", `Line ${idx + 1}: ${n} characters; limit is ${rules.maxLineChars}.`, cue.cue, cue.line + 1 + idx));
     });
-    if (text.includes("\uFFFD")) issues.push(ISSUE("warning", "replacement-character", "Найден символ замены �; проверь кодировку исходного файла.", cue.cue, cue.line));
+    if (text.includes("\uFFFD")) issues.push(ISSUE("warning", "replacement-character", "Found a replacement character (�); check the source file encoding.", cue.cue, cue.line));
     const overlap = overlapByCue.get(cue.cue);
-    if (overlap) issues.push(ISSUE("warning", "overlap", `Пересекается с cue ${overlap.withCue} на ${overlap.duration} мс.`, cue.cue, cue.line));
-    if (previous && text && text.toLocaleLowerCase() === previous.text.trim().toLocaleLowerCase()) issues.push(ISSUE("notice", "duplicate-text", `Текст повторяет cue ${previous.cue}.`, cue.cue, cue.line));
+    if (overlap) issues.push(ISSUE("warning", "overlap", `Overlaps cue ${overlap.withCue} by ${overlap.duration} ms.`, cue.cue, cue.line));
+    if (previous && text && text.toLocaleLowerCase() === previous.text.trim().toLocaleLowerCase()) issues.push(ISSUE("notice", "duplicate-text", `Text repeats cue ${previous.cue}.`, cue.cue, cue.line));
     previous = cue;
   }
   return issues;
@@ -98,12 +98,12 @@ export function analyzeSubtitles(parsed, rules = DEFAULT_RULES) {
 
 export function compareTracks(a, b) {
   const issues = [];
-  if (a.cues.length !== b.cues.length) issues.push(ISSUE("warning", "cue-count-mismatch", `Число cue различается: ${a.cues.length} и ${b.cues.length}.`, null, null));
+  if (a.cues.length !== b.cues.length) issues.push(ISSUE("warning", "cue-count-mismatch", `Cue count differs: ${a.cues.length} vs ${b.cues.length}.`, null, null));
   for (let i = 0; i < Math.min(a.cues.length, b.cues.length); i++) {
     const left = a.cues[i], right = b.cues[i];
     const ds = Math.abs(left.start - right.start), de = Math.abs(left.end - right.end);
-    if (ds > 500 || de > 500) issues.push(ISSUE("notice", "timing-drift", `Cue ${i + 1}: начало отличается на ${ds} мс, конец — на ${de} мс.`, i + 1, left.line));
-    if (!left.text.trim() || !right.text.trim()) issues.push(ISSUE("warning", "missing-translation", `Cue ${i + 1}: пустой текст хотя бы в одной дорожке.`, i + 1, left.line));
+    if (ds > 500 || de > 500) issues.push(ISSUE("notice", "timing-drift", `Cue ${i + 1}: start differs by ${ds} ms, end differs by ${de} ms.`, i + 1, left.line));
+    if (!left.text.trim() || !right.text.trim()) issues.push(ISSUE("warning", "missing-translation", `Cue ${i + 1}: text is empty in at least one track.`, i + 1, left.line));
   }
   return issues;
 }

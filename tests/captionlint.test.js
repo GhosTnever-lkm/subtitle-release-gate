@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { analyzeSubtitles, compareTracks, makeMarkdownReport, parseSubtitle } from "../src/captionlint.js";
 
 test("parses BOM and Windows line endings in SRT", () => {
@@ -75,4 +76,27 @@ test("Markdown report escapes untrusted filenames and malformed timestamp text",
   assert.doesNotMatch(report, /\n## injected section/);
   assert.doesNotMatch(report, /\[click\]\(https:\/\/evil\.example\)/);
   assert.match(report, /injected section/);
+});
+
+
+test("all user-facing diagnostics use the interface language", () => {
+  const source = readFileSync(new URL("../src/captionlint.js", import.meta.url), "utf8");
+  for (const line of source.split(/\r?\n/).filter(line => line.includes("ISSUE("))) {
+    assert.doesNotMatch(line, /[\u0400-\u04ff]/, line);
+  }
+  const malformedVtt = parseSubtitle("not a cue\n", "broken.vtt");
+  const malformedSrt = parseSubtitle("not a cue\n", "broken.srt");
+  const timed = parseSubtitle("1\n00:00:00,000 --> 00:00:00,100\n" + "A".repeat(80) + "\n", "fast.srt");
+  const findings = [
+    ...malformedVtt.issues,
+    ...malformedSrt.issues,
+    ...analyzeSubtitles(timed),
+    ...compareTracks(parseSubtitle("1\n00:00:01,000 --> 00:00:02,000\nHello\n", "a.srt"), parseSubtitle("1\n00:00:03,000 --> 00:00:04,000\n\n2\n00:00:05,000 --> 00:00:06,000\nHi\n", "b.srt"))
+  ];
+  assert.ok(findings.length > 0);
+  for (const finding of findings) assert.doesNotMatch(finding.message, /[\u0400-\u04ff]/, finding.code);
+  assert.match(findings.find(finding => finding.code === "reading-speed").message, /chars\/s — above the limit/);
+  const replacement = parseSubtitle("1\n00:00:01,000 --> 00:00:02,000\n�\n", "encoding.srt");
+  assert.equal(analyzeSubtitles(replacement).find(finding => finding.code === "replacement-character").message,
+    "Found a replacement character (�); check the source file encoding.");
 });

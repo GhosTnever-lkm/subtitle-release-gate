@@ -1,4 +1,4 @@
-import { analyzeSubtitles, compareTracks, DEFAULT_RULES, makeMarkdownReport, parseSubtitle } from "./captionlint.js?v=1.0.5";
+import { analyzeSubtitles, compareTracks, DEFAULT_RULES, makeMarkdownReport, parseSubtitle } from "./captionlint.js?v=1.0.6";
 
 const $ = selector => document.querySelector(selector);
 const state = { primary: null, secondary: null, report: null };
